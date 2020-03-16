@@ -51,12 +51,15 @@ import {
   ExecutionResult,
   StepBody,
   configureWorkflow,
+  MemoryPersistenceProvider,
+  ConsoleLogger,
+  WorkflowStatus
 } from 'workflow-es'
 
 export const emitter = new EventEmitter()
 
-class MyDataClass {    
-  public externalValue: any;
+class MyDataClass {
+  public externalValue: any
 }
 
 class EmitPing extends StepBody {
@@ -105,22 +108,31 @@ export class SampleWorkflow implements WorkflowBase<MyDataClass> {
 
 const main = async () => {
   const config = configureWorkflow()
+  const persistence = new MemoryPersistenceProvider()
+  config.useLogger(new ConsoleLogger())
+  config.usePersistence(persistence)
   const host = config.getHost()
+
   host.registerWorkflow(SampleWorkflow)
   await host.start()
+
+  let workflowId = undefined as undefined|string
 
   emitter.on('ping', async () => {
     console.info('Got ping, sending event')
     await host.publishEvent('myEvent', '0', 'Hi!', new Date())
+    if (workflowId !== undefined) {
+      console.info('Sent event to workflow: ' + workflowId, (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable)
+    }
   })
 
   emitter.on('done', () => {
     console.info('Workflow done')
   })
 
-  var myData = new MyDataClass();  
-  const id = await host.startWorkflow('test1', 1, myData)
-  console.info('Started workflow: ' + id)
+  var myData = new MyDataClass()
+  workflowId = await host.startWorkflow('test1', 1, myData)
+  console.info('Started workflow: ' + workflowId, (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable)
 }
 
 if (require.main === module) {
