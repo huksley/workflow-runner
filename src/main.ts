@@ -55,6 +55,10 @@ import {
 
 export const emitter = new EventEmitter()
 
+class MyDataClass {    
+  public externalValue: any;
+}
+
 class EmitPing extends StepBody {
   public run(context: StepExecutionContext): Promise<ExecutionResult> {
     console.info('Pinging', context.workflow.id)
@@ -80,7 +84,7 @@ class LogMessage extends StepBody {
   }
 }
 
-export class SampleWorkflow implements WorkflowBase<any> {
+export class SampleWorkflow implements WorkflowBase<MyDataClass> {
   public id: string = 'test1'
   public version: number = 1
 
@@ -105,16 +109,17 @@ const main = async () => {
   host.registerWorkflow(SampleWorkflow)
   await host.start()
 
-  emitter.on('ping', () => {
+  emitter.on('ping', async () => {
     console.info('Got ping, sending event')
-    host.publishEvent('myEvent', '0', 'Hi!', new Date())
+    await host.publishEvent('myEvent', '0', 'Hi!', new Date())
   })
 
   emitter.on('done', () => {
     console.info('Workflow done')
   })
 
-  const id = await host.startWorkflow('test1', 1, null)
+  var myData = new MyDataClass();  
+  const id = await host.startWorkflow('test1', 1, myData)
   console.info('Started workflow: ' + id)
 }
 
