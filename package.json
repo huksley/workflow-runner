@@ -33,14 +33,13 @@
     "nodemon": "^1.19.1",
     "prettier": "^1.17.1",
     "pretty-quick": "^1.10.0",
-    "serverless": "^1.44.1",
-    "serverless-plugin-existing-s3": "^2.4.0",
-    "serverless-plugin-typescript": "^1.1.7",
+    "serverless": "^1.66.0",
+    "serverless-plugin-typescript": "^1.1.9",
     "shx": "^0.3.2",
-    "ts-node": "^8.1.0",
-    "tslint": "^5.16.0",
+    "ts-node": "^8.7.0",
+    "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.5.1"
+    "typescript": "^3.8.3"
   },
   "scripts": {
     "clean": "shx rm -Rf build node_modules",
