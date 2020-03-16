@@ -1,0 +1,66 @@
+{
+  "name": "workflow-runner",
+  "description": "Executes distributed, long-running, resilient workflows",
+  "version": "1.0.0",
+  "main": "src/main.ts",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0 <12.12.0",
+    "yarn": ">=1.12.3"
+  },
+  "dependencies": {
+    "assert": "^1.4.1",
+    "aws-lambda": "^0.1.2",
+    "aws-sdk": "^2.468.0",
+    "cross-env": "^5.2.0",
+    "dotenv": "^7.0.0",
+    "io-ts": "^1.8.5",
+    "ramda": "^0.26.1",
+    "sharp": "^0.22.1",
+    "source-map-support": "^0.5.12",
+    "winston": "^2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.26",
+    "@types/dotenv": "^6.1.1",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^12.0.4",
+    "@types/ramda": "^0.26.8",
+    "@types/sharp": "^0.22.2",
+    "husky": "^2.2.0",
+    "mocha": "^6.1.4",
+    "nodemon": "^1.19.1",
+    "prettier": "^1.17.1",
+    "pretty-quick": "^1.10.0",
+    "serverless": "^1.44.1",
+    "serverless-plugin-existing-s3": "^2.4.0",
+    "serverless-plugin-typescript": "^1.1.7",
+    "shx": "^0.3.2",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.5.1"
+  },
+  "scripts": {
+    "clean": "shx rm -Rf build node_modules",
+    "build": "tsc -p .",
+    "format": "prettier \"src/**/*.{js,ts,tsx}\" --write",
+    "lint": "ts-node node_modules/.bin/tslint -p . -t verbose",
+    "test": "chamber exec workflows/js -- mocha",
+    "deploy": "chamber exec workflows/js -- serverless deploy",
+    "serverless": "chamber exec workflows/js  -- serverless"
+  },
+  "prettier": {
+    "semi": false,
+    "printWidth": 100,
+    "parser": "typescript",
+    "singleQuote": true,
+    "trailingComma": "all"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged --pattern \"**/*.*(js|jsx|ts|tsx)\"",
+      "pre-push": "yarn run -s lint && yarn run -s build && yarn test"
+    }
+  }
+}
