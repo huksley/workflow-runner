@@ -100,8 +100,8 @@ export const apiResponse = (
   const httpPayload = !simplePayload // FIXME
 
   interface ResponseType {
-    statusCode: number,
-    headers: { [name: string]: string },
+    statusCode: number
+    headers: { [name: string]: string }
     body: any
   }
 
@@ -110,9 +110,7 @@ export const apiResponse = (
   const cb = simplePayload
     ? (response: ResponseType): void => {
         log.info(
-          `Response function ${context.functionName}, requestId = ${context.awsRequestId}, status ${
-            response.statusCode
-          }`,
+          `Response function ${context.functionName}, requestId = ${context.awsRequestId}, status ${response.statusCode}`,
         )
         return !httpPayload && response.statusCode >= 400
           ? callback(response.body, null)
@@ -120,9 +118,7 @@ export const apiResponse = (
       }
     : (response: ResponseType): void => {
         log.warn(
-          `Response function ${context.functionName}, requestId = ${context.awsRequestId}, status ${
-            response.statusCode
-          }`,
+          `Response function ${context.functionName}, requestId = ${context.awsRequestId}, status ${response.statusCode}`,
         )
         return !httpPayload && response.statusCode >= 400
           ? callback(response.body, null)
@@ -133,7 +129,11 @@ export const apiResponse = (
     /**
      * Call success to finish Lambda invocation and return data
      */
-    success: (payload: any, statusCode: number = 200, headers: { [name: string]: string }|undefined = undefined) => {
+    success: (
+      payload: any,
+      statusCode: number = 200,
+      headers: { [name: string]: string } | undefined = undefined,
+    ) => {
       // Don`t wait for event loop to drain
       context.callbackWaitsForEmptyEventLoop = false
 
@@ -144,7 +144,7 @@ export const apiResponse = (
           // Required for CORS support to work
           'Access-Control-Allow-Origin': '*',
           // Required for cookies, authorization headers with HTTPS
-          'Access-Control-Allow-Credentials': "true",
+          'Access-Control-Allow-Credentials': 'true',
         },
         body: JSON.stringify(payload),
       })
@@ -153,7 +153,11 @@ export const apiResponse = (
      * Call to return 500 (by default error) and specify either error JSON body, string or undefined
      * If not specified or a string, will produce { message: "<str> | Internal server error" } payload
      */
-    failure: (payload: any = undefined, statusCode: number = 500, headers: { [name: string]: string }|undefined = undefined) => {
+    failure: (
+      payload: any = undefined,
+      statusCode: number = 500,
+      headers: { [name: string]: string } | undefined = undefined,
+    ) => {
       // Don`t wait for event loop to drain
       context.callbackWaitsForEmptyEventLoop = false
 
@@ -164,7 +168,7 @@ export const apiResponse = (
           // Required for CORS support to work
           'Access-Control-Allow-Origin': '*',
           // Required for cookies, authorization headers with HTTPS
-          'Access-Control-Allow-Credentials': "true",
+          'Access-Control-Allow-Credentials': 'true',
         },
         body:
           typeof payload === 'string'

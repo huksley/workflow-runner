@@ -7,7 +7,7 @@ export const defaultConfig = {
   LOG_LEVEL: 'info' as 'info' | 'debug' | 'warn' | 'error',
   AWS_REGION: 'eu-west-1',
   /** Should run e2e tests, potentially spending money? */
-  TEST_E2E: false
+  TEST_E2E: false,
 }
 
 type defaultConfigKey = keyof typeof defaultConfig
