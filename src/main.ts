@@ -1,49 +1,12 @@
 import * as t from 'io-ts'
-import {
-  findPayload,
-  apiResponse,
-} from './util'
+import { findPayload, apiResponse } from './util'
 
 import { Context as LambdaContext, APIGatewayEvent, Callback as LambdaCallback } from 'aws-lambda'
 import { logger as log } from './logger'
 import { config } from './config'
 import * as R from 'ramda'
 
-/**
- * Image crop rectangle. Usually a face to focus on.
- * Values are a 0..1 of total width/height of the image.
- */
-export const RectPayload = t.type({
-  top: t.number,
-  left: t.number,
-  width: t.number,
-  height: t.number,
-})
-
-export type Rect = t.TypeOf<typeof RectPayload>
-
-export const InputPayload = t.intersection([
-  t.type({
-    // Required s3://bucket/path.jpg
-    s3Url: t.string,
-  }),
-  t.partial({
-    // Optional face
-    faceRect: RectPayload,
-    // Optional target path
-    dstS3Url: t.string,
-    // Pixel width
-    width: t.number,
-    // Pixel height
-    height: t.number,
-    // Target format
-    format: t.union([t.literal('png'), t.literal('jpg')]),
-    // Check thumbnail exists (only S3 object existence checked)
-    checkExists: t.boolean,
-    // Produce large image crop than specified by factRect (zoom out), 2 - twice the size
-    zoomOut: t.number,
-  }),
-])
+export const InputPayload = t.type({})
 
 // Typescript input type
 export type Input = t.TypeOf<typeof InputPayload>
@@ -52,7 +15,6 @@ export type Input = t.TypeOf<typeof InputPayload>
 export const OutputPayload = InputPayload
 
 export type Output = t.TypeOf<typeof OutputPayload>
-
 
 /** Invoked on API Gateway call */
 export const handler = (
@@ -70,12 +32,92 @@ export const handler = (
   )
 
   const payload = findPayload(event)
-  logger.info(`Using payload`, payload)
+  log.info(`Using payload`, payload)
 
   try {
-    const result = R.assoc("config", config, {})
+    const result = R.assoc('config', config, {})
     apiResponse(event, context, callback).success(result)
   } catch (error) {
     apiResponse(event, context, callback).failure('Failed to resize: ' + error)
   }
+}
+
+import { EventEmitter } from 'events'
+
+import {
+  WorkflowBuilder,
+  WorkflowBase,
+  StepExecutionContext,
+  ExecutionResult,
+  StepBody,
+  configureWorkflow,
+} from 'workflow-es'
+
+export const emitter = new EventEmitter()
+
+class EmitPing extends StepBody {
+  public run(context: StepExecutionContext): Promise<ExecutionResult> {
+    console.info('Pinging', context.workflow.id)
+    emitter.emit('ping')
+    return ExecutionResult.next()
+  }
+}
+
+class EmitDone extends StepBody {
+  public run(context: StepExecutionContext): Promise<ExecutionResult> {
+    console.info('Emitting done', context.workflow.id)
+    emitter.emit('done')
+    return ExecutionResult.next()
+  }
+}
+
+class LogMessage extends StepBody {
+  public message: string
+
+  public run(context: StepExecutionContext): Promise<ExecutionResult> {
+    console.info('LogMessage: ' + this.message, context.workflow.id)
+    return ExecutionResult.next()
+  }
+}
+
+export class SampleWorkflow implements WorkflowBase<any> {
+  public id: string = 'test1'
+  public version: number = 1
+
+  public build(builder: WorkflowBuilder<any>) {
+    builder
+      .startWith(LogMessage)
+      .input((step, _) => (step.message = 'Waiting for event...'))
+      .then(EmitPing)
+      .waitFor('myEvent', _ => '0')
+      .output((step, data) => (data.externalValue = step.eventData))
+      .then(LogMessage)
+      .input((step, data) => (step.message = 'The event data is ' + data.externalValue))
+      .then(LogMessage)
+      .input((step, _) => (step.message = 'Complete'))
+      .then(EmitDone)
+  }
+}
+
+const main = async () => {
+  const config = configureWorkflow()
+  const host = config.getHost()
+  host.registerWorkflow(SampleWorkflow)
+  await host.start()
+
+  emitter.on('ping', () => {
+    console.info('Got ping, sending event')
+    host.publishEvent('myEvent', '0', 'Hi!', new Date())
+  })
+
+  emitter.on('done', () => {
+    console.info('Workflow done')
+  })
+
+  const id = await host.startWorkflow('test1', 1, null)
+  console.info('Started workflow: ' + id)
+}
+
+if (require.main === module) {
+  main()
 }

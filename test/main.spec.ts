@@ -1,62 +1,9 @@
 import * as assert from 'assert'
-import { EventEmitter } from 'events'
-
 import {
-  WorkflowBuilder,
-  WorkflowBase,
-  StepExecutionContext,
-  ExecutionResult as exec,
-  configureWorkflow,
-  ExecutionResult,
-  StepBody,
+  configureWorkflow
 } from 'workflow-es'
 
-const emitter = new EventEmitter();
-
-class EmitPing extends StepBody {
-  public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info('Pinging', context.workflow.id)
-    emitter.emit('ping')
-    return exec.next()
-  }
-}
-
-class EmitDone extends StepBody {
-  public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info('Sending done', context.workflow.id)
-    emitter.emit('done')
-    return exec.next()
-  }
-}
-
-class LogMessage extends StepBody {
-  public message: string
-
-  public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info("LogMessage: " + this.message, context.workflow.id)
-    return ExecutionResult.next()
-  }
-}
-
-class SampleWorkflow implements WorkflowBase<any> {
-  public id: string = 'test1'
-  public version: number = 1
-
-  public build(builder: WorkflowBuilder<any>) {
-    builder
-      .startWith(LogMessage)
-      .input((step, _) => (step.message = 'Waiting for event...'))
-      .then(EmitPing)
-      .waitFor('myEvent', _ => '0')
-      .output((step, data) => (data.externalValue = step.eventData))
-      .then(LogMessage)
-      .input((step, data) => (step.message = 'The event data is ' + data.externalValue))
-      .then(LogMessage)
-      .input((step, _) => (step.message = 'Complete'))
-      .then(EmitDone)
-  }
-}
-
+import { emitter, SampleWorkflow } from "../src/main"
 
 describe('main.ts', () => {
   it('can start workflow', async () => {
@@ -81,5 +28,6 @@ describe('main.ts', () => {
     const id = await host.startWorkflow('test1', 1, null)
     assert.ok(id)
     console.log('Started workflow: ' + id)
+    await new Promise(resolve => setTimeout(() => resolve(), 5000));
   }).timeout(10000)
 })
