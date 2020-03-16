@@ -2505,6 +2505,11 @@ into-stream@^3.1.0:
     from2 "^2.1.1"
     p-is-promise "^1.1.0"
 
+inversify@^4.1.0:
+  version "4.14.0"
+  resolved "https://registry.yarnpkg.com/inversify/-/inversify-4.14.0.tgz#393c1f86ee92aef0592eb0e493623b9d88dfb376"
+  integrity sha512-DQLg2u2tWaiHo6V5lGr47a/M9YBX3g72c8Y58+JPH0Lx9fXugEsnXRc08mwsTvDg6gGWBKSkIgtBS/eJCQmDVg==
+
 io-ts@^1.8.5:
   version "1.10.4"
   resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-1.10.4.tgz#cd5401b138de88e4f920adbcb7026e2d1967e6e2"
@@ -4015,6 +4020,11 @@ rechoir@^0.6.2:
   dependencies:
     resolve "^1.1.6"
 
+reflect-metadata@^0.1.10:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.1.13.tgz#67ae3ca57c972a2aa1642b10fe363fe32d49dc08"
+  integrity sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==
+
 regenerator-runtime@^0.13.1, regenerator-runtime@^0.13.3:
   version "0.13.5"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.5.tgz#d878a1d094b4306d10b9096484b33ebd55e26697"
@@ -5174,6 +5184,14 @@ winston@^2:
     eyes "0.1.x"
     isstream "0.1.x"
     stack-trace "0.0.x"
+
+workflow-es@^2.3.5:
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/workflow-es/-/workflow-es-2.3.5.tgz#c17ec0ed542c2a74738cb2dcda97b322dfce438d"
+  integrity sha512-lflsvS2BfmIhXDxTpI5Q/tWVYoTN5F5RvBGF8U5lzlSK1o2uKLGulDpScf6gEiVqmTQSVNA3FSV2aSaTK7y8jA==
+  dependencies:
+    inversify "^4.1.0"
+    reflect-metadata "^0.1.10"
 
 wrap-ansi@^5.1.0:
   version "5.1.0"
