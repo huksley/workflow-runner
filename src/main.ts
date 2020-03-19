@@ -53,8 +53,9 @@ import {
   configureWorkflow,
   MemoryPersistenceProvider,
   ConsoleLogger,
-  WorkflowStatus
-} from 'workflow-es'
+  WorkflowStatus,
+  PollWorker,
+} from '@huksley/workflow-es'
 
 export const emitter = new EventEmitter()
 
@@ -64,7 +65,7 @@ class MyDataClass {
 
 class EmitPing extends StepBody {
   public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info('Pinging', context.workflow.id)
+    log.info('Pinging', context.workflow.id)
     emitter.emit('ping')
     return ExecutionResult.next()
   }
@@ -72,7 +73,7 @@ class EmitPing extends StepBody {
 
 class EmitDone extends StepBody {
   public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info('Emitting done', context.workflow.id)
+    log.info('Emitting done', context.workflow.id)
     emitter.emit('done')
     return ExecutionResult.next()
   }
@@ -82,7 +83,7 @@ class LogMessage extends StepBody {
   public message: string
 
   public run(context: StepExecutionContext): Promise<ExecutionResult> {
-    console.info('LogMessage: ' + this.message, context.workflow.id)
+    log.info('LogMessage: ' + this.message, context.workflow.id)
     return ExecutionResult.next()
   }
 }
@@ -96,7 +97,11 @@ export class SampleWorkflow implements WorkflowBase<MyDataClass> {
       .startWith(LogMessage)
       .input((step, _) => (step.message = 'Waiting for event...'))
       .then(EmitPing)
-      .waitFor('myEvent', _ => '0')
+      .waitFor(
+        'myEvent',
+        _ => '0',
+        _ => new Date(),
+      )
       .output((step, data) => (data.externalValue = step.eventData))
       .then(LogMessage)
       .input((step, data) => (step.message = 'The event data is ' + data.externalValue))
@@ -107,32 +112,43 @@ export class SampleWorkflow implements WorkflowBase<MyDataClass> {
 }
 
 const main = async () => {
-  const config = configureWorkflow()
+  const workflowConfig = configureWorkflow()
   const persistence = new MemoryPersistenceProvider()
-  config.useLogger(new ConsoleLogger())
-  config.usePersistence(persistence)
-  const host = config.getHost()
+  const pollWorker = new PollWorker()
+  pollWorker.setInterval(500)
+  workflowConfig.useLogger(new ConsoleLogger())
+  workflowConfig.usePollWorker(pollWorker)
+  workflowConfig.usePersistence(persistence)
+
+  const host = workflowConfig.getHost()
 
   host.registerWorkflow(SampleWorkflow)
   await host.start()
 
-  let workflowId = undefined as undefined|string
+  let workflowId = undefined as undefined | string
 
   emitter.on('ping', async () => {
-    console.info('Got ping, sending event')
-    await host.publishEvent('myEvent', '0', 'Hi!', new Date())
+    log.info('Got ping, sending event')
+    await host.publishEvent('myEvent', '0', 'Hi!')
     if (workflowId !== undefined) {
-      console.info('Sent event to workflow: ' + workflowId, (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable)
+      log.info(
+        'Sent event to workflow: ' + workflowId,
+        (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable,
+      )
     }
   })
 
   emitter.on('done', () => {
-    console.info('Workflow done')
+    log.info('Workflow done')
+    host.stop()
   })
 
-  var myData = new MyDataClass()
+  const myData = new MyDataClass()
   workflowId = await host.startWorkflow('test1', 1, myData)
-  console.info('Started workflow: ' + workflowId, (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable)
+  log.info(
+    'Started workflow: ' + workflowId,
+    (await persistence.getWorkflowInstance(workflowId)).status === WorkflowStatus.Runnable,
+  )
 }
 
 if (require.main === module) {
